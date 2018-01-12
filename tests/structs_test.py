@@ -283,32 +283,29 @@ def test_volume():
     assert(390412 < total_vol[0] < 390414)
 
 
-def ttest_bifurcation_sibling_ratio_local():
-    swc_neuron1 = NeuronMorphology('tests/v_e_moto1.CNG.swc')
-    ratios = []
-    for node in swc_neuron1._bif_points:
-        ratio = swc_neuron1.bifurcation_sibling_ratio(node, where='local')
-        ratios.append(ratio)
-    print(('mean(ratios_local)=', np.mean(ratios)))
-    assert(1.31 < np.mean(ratios) < 1.32)
-
-
-def ttest_bifurcation_sibling_ratio_remote():
-    swc_neuron1 = NeuronMorphology('tests/v_e_moto1.CNG.swc')
-    ratios = []
-    for node in swc_neuron1._bif_points:
-        ratio = swc_neuron1.bifurcation_sibling_ratio(node, where='remote')
-        ratios.append(ratio)
-    print(('mean(ratios_remote)=', np.mean(ratios)))
-    assert(1.16 < np.mean(ratios) < 1.17)
+# def test_bifurcation_sibling_ratio_local():
+#     swc_neuron1 = NeuronMorphology('tests/v_e_moto1.CNG.swc')
+#     ratios = []
+#     for node in swc_neuron1._bif_points:
+#         ratio = swc_neuron1.bifurcation_sibling_ratio(node, where='local')
+#         ratios.append(ratio)
+#     print(('mean(ratios_local)=', np.mean(ratios)))
+#     assert(1.31 < np.mean(ratios) < 1.32)
+#
+#
+# def test_bifurcation_sibling_ratio_remote():
+#     swc_neuron1 = NeuronMorphology('tests/v_e_moto1.CNG.swc')
+#     ratios = []
+#     for node in swc_neuron1._bif_points:
+#         ratio = swc_neuron1.bifurcation_sibling_ratio(node, where='remote')
+#         ratios.append(ratio)
+#     print(('mean(ratios_remote)=', np.mean(ratios)))
+#     assert(1.16 < np.mean(ratios) < 1.17)
 
 
 def test_bifurcation_amplitude_local():
     swc_neuron1 = NeuronMorphology('tests/v_e_moto1.CNG.swc')
-    all_ampl = []
-    for node in swc_neuron1._bif_points:
-        ampl = swc_neuron1.bifurcation_angle_vec(node, where='local')
-        all_ampl.append(ampl)
+    avgampl, all_ampl = swc_neuron1.avg_bif_angle_local()
     print(('min=%f max(ample)=%f, mean(ampl)=%f' % (np.min(all_ampl),
                                                    np.max(all_ampl),
                                                    np.mean(all_ampl))))
@@ -317,10 +314,7 @@ def test_bifurcation_amplitude_local():
 
 def test_bifurcation_amplitude_remote():
     swc_neuron1 = NeuronMorphology('tests/v_e_moto1.CNG.swc')
-    all_ampl = []
-    for node in swc_neuron1._bif_points:
-        ampl = swc_neuron1.bifurcation_angle_vec(node, where='remote')
-        all_ampl.append(ampl)
+    avgampl, all_ampl = swc_neuron1.avg_bif_angle_remote()
     print(('min=%f max(ample)=%f, mean(ampl)=%f' % (np.min(all_ampl),
                                                    np.max(all_ampl),
                                                    np.mean(all_ampl))))
@@ -472,6 +466,29 @@ def depth_first_iterator_test():
     assert dfsInds == [1, 22, 21, 2, 4, 12, 14, 18, 20, 19, 15, 17, 16, 13, 5, 9, 11, 10, 6, 8, 7, 3]
 
 
-if __name__ == "__main__":
-    # test_NeuronMorphology_multipleTrees()
-    test_empty_SWC()
+def getGlobalScalarMeasures_NM_test():
+    """
+    Testing getGlobalScalarMeasures function of NeuronMorphology
+    """
+
+    swc_neuron1 = NeuronMorphology('tests/v_e_moto1.CNG.swc')
+
+    tests_globalFeatures = swc_neuron1.getGlobalScalarMeasures()
+    expectedGlobalFeatures = {
+        'max_EucDistance_from_root': 1531.5018772433809,
+        'max_pathLength_from_root': 1817.9953410340488,
+        'total_length': 78849.116218742725,
+        'no_bifurcations': 122,
+        'max_centrifugal_order': 9,
+        'avg_partition_asymmetry': 0.4353446216271674,
+        'total_surface': 512417.1344197031,
+        'total_volume': 390412.7028861146,
+        'avg_bif_angle_local': 46.83513471862728,
+        'avg_bif_angle_remote': 45.7451432996407,
+        'avg_diameter': 2.201395348837209,
+        'avg_contraction': 0.9395945203189684,
+        'avg_Burke_taper': -0.8303328224830339,
+        'width': 2588.0, 'depth': 2306.0, 'height': 2089.0
+   }
+    assert all([np.allclose(tests_globalFeatures[x], expectedGlobalFeatures[x], atol=1e-3)
+                for x in expectedGlobalFeatures.keys()])

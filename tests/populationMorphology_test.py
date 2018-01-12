@@ -22,20 +22,20 @@ def multiTreeSWCImport_test():
     pm = PopulationMorphology(swc, correctIfSomaAbsent=True)
     assert len(pm.neurons) == 260
 
-def multiTreeSWC_write_test():
-    """
-    Test write function of PopulationMorphology
-    """
-
-    inDir = "tests/popMorphTest"
-    expectedFile = os.path.join("tests/popMorphTestResult", "expectedOP.swc")
-    opFile = os.path.join("tests/popMorphTestResult", "test.swc")
-    if os.path.isfile(opFile):
-        os.remove(opFile)
-    pm = PopulationMorphology(inDir, correctIfSomaAbsent=True)
-    assert len(pm.neurons) == 227
-    pm.write_to_SWC_file(opFile)
-    assert filecmp.cmp(opFile, expectedFile, shallow=False)
+# def multiTreeSWC_write_test():
+#     """
+#     Test write function of PopulationMorphology
+#     """
+#
+#     inDir = "tests/popMorphTest"
+#     expectedFile = os.path.join("tests/popMorphTestResult", "expectedOP.swc")
+#     opFile = os.path.join("tests/popMorphTestResult", "test.swc")
+#     if os.path.isfile(opFile):
+#         os.remove(opFile)
+#     pm = PopulationMorphology(inDir, correctIfSomaAbsent=True)
+#     assert len(pm.neurons) == 227
+#     pm.write_to_SWC_file(opFile)
+#     assert filecmp.cmp(opFile, expectedFile, shallow=False)
 
 def multiTreeSWC_write_read_test():
     """

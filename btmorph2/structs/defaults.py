@@ -1,0 +1,19 @@
+defaultGlobalScalarFuncs = [
+                             'width',
+                             'depth',
+                             'height',
+                             'avg_diameter',
+                             'total_length',
+                             'total_surface',
+                             'total_volume',
+                             'no_bifurcations',
+                             'max_EucDistance_from_root',
+                             'max_pathLength_from_root',
+                             'max_centrifugal_order',
+                             'avg_Burke_taper',
+                             'avg_contraction',
+                             'avg_bif_angle_local',
+                             'avg_bif_angle_remote',
+                             'avg_partition_asymmetry',
+                             'avg_sibling_ratio_local'
+                             ]
