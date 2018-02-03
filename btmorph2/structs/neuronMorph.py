@@ -10,6 +10,7 @@ from ..btviz import plot_3D, animate, plot_dendrogram, plot_2D
 import numpy as np
 import sys
 from .defaults import defaultGlobalScalarFuncs
+from ..auxFuncs import getIntersectionXYZs
 
 class NeuronMorphology(object):
     '''
@@ -616,7 +617,7 @@ class NeuronMorphology(object):
             bifAngles = [self.bifurcation_angle_vec(n, where="local") for n in self._bif_points]
             return float(np.mean(bifAngles)), bifAngles
         else:
-            return float('nan')
+            return float('nan'), [float("nan")]
 
     def avg_bif_angle_remote(self):
         """
@@ -631,7 +632,7 @@ class NeuronMorphology(object):
             bifAngles = [self.bifurcation_angle_vec(n, where="remote") for n in self._bif_points]
             return float(np.mean(bifAngles)), bifAngles
         else:
-            return float('nan')
+            return float('nan'), [float("nan")]
 
     def avg_partition_asymmetry(self):
         """
@@ -699,7 +700,7 @@ class NeuronMorphology(object):
 
             return float(np.mean(siblingRatios_local)), siblingRatios_local
         else:
-            return float("nan")
+            return float("nan"), [float("nan")]
 
     """
     Local measures
@@ -1296,4 +1297,175 @@ class NeuronMorphology(object):
             swcDataS[func] = ret
 
         return swcDataS
+
+    def getIntersectionsVsDistance(self, radii, centeredAt=None):
+        """
+        Calculates and returns the number of intersections of the morphology with concentric spheres of radii in
+        input argument radii
+        :param radii: iterable of non-negative floats of size at least 2, radii of spheres concerned
+        :param centeredAt: iterable of floats of size 3, containing the X, Y and Z coordinates of the center of the
+        spheres
+        :return: list of same size as radii, of intersections, corresponding to radii in input argument radii
+        """
+
+        assert len(radii) >= 2, "Input argument radii must have at least 2 numbers, got {}".format(radii)
+        assert all([x >= 0 for x in radii]), "Input argument radii can only consist of non-negative numbers, " \
+                                             "got {}".format(radii)
+        intersects = [0 for x in radii]
+        radii = list(radii)
+        radiiSorted = np.sort(radii)
+
+        if centeredAt is None:
+            centeredAt = self.get_tree().root.content["p3d"].xyz
+
+        assert len(centeredAt) == 3, "Input argument centeredAt must be a 3 member iterable of numbers, " \
+                                     "got {}".format(centeredAt)
+        centeredAt = np.asarray(centeredAt)
+
+        def nodeDistance(n):
+            nXYZ = np.asarray(n.content["p3d"].xyz)
+            return np.linalg.norm(nXYZ - centeredAt)
+
+        def nodeXYZ(n):
+            return np.asarray(n.content["p3d"].xyz)
+
+        allNodesExceptRoot = [x for x in self.get_tree().breadth_first_iterator_generator() if x.parent]
+
+        for node in allNodesExceptRoot:
+
+            nodeDist = nodeDistance(node)
+            parentDist = nodeDistance(node.parent)
+
+            # in case node is farther than the parent
+            if nodeDist > parentDist:
+                fartherDist = nodeDist
+                fartherXYZ = nodeXYZ(node)
+                nearerDist = parentDist
+                nearerXYZ = nodeXYZ(node.parent)
+            else:
+                fartherDist = parentDist
+                fartherXYZ = nodeXYZ(node.parent)
+                nearerDist = nodeDist
+                nearerXYZ = nodeXYZ(node)
+
+            if fartherDist > radiiSorted[0]:
+                radiiCrossedMask = np.logical_and(nearerDist < radiiSorted, radiiSorted <= fartherDist)
+                radiiCrossed = radiiSorted[radiiCrossedMask]
+
+                if len(radiiCrossed) == 0:
+                    radiiCrossed = []
+                    largestRLessNearerPoint = radiiSorted[radiiSorted <= nearerDist].max()
+                    currentIntersects = getIntersectionXYZs(nearerXYZ, fartherXYZ, centeredAt,
+                                                            largestRLessNearerPoint)
+
+                    if len(currentIntersects) == 2:
+                        if nearerDist > largestRLessNearerPoint:
+                            radiiCrossed.append(largestRLessNearerPoint)
+                        if fartherDist > largestRLessNearerPoint:
+                            radiiCrossed.append(largestRLessNearerPoint)
+                for rad in radiiCrossed:
+                    intersects[radii.index(rad)] += 1
+
+        return intersects
+
+    def getLengthVsDistance(self, radii, centeredAt=None):
+        """
+        Calculates and returns the length of dendrites of the morphology contained within concentric shells defined by
+        adjacent values of input argument radii. First shell is the sphere of radius radii[0]
+        :param radii: iterable of positive floats of size at least 2, radii "bin edges" of shells
+        :param centeredAt: iterable of floats of size 3, containing the X, Y and Z coordinates of the center of the
+        spheres
+        :return: list of size len(radii), of lengths, corresponding to concentric shells defined by adjacent values
+        of  radii.
+        """
+
+        assert len(radii) >= 2, "Input argument radii must have at least 2 numbers, got {}".format(radii)
+        assert all(x > 0 for x in radii), "Input argument radii can only consist of postive numbers, " \
+                                          "got {}".format(radii)
+        radii = list(radii)
+        lengths = [0 for x in radii]
+        assert radii == sorted(radii), "Input argument radii must be sorted"
+        radiiSorted = np.array(radii)
+
+        if centeredAt is None:
+            centeredAt = self.get_tree().root.content["p3d"].xyz
+
+        assert len(centeredAt) == 3, "Input argument centeredAt must be a 3 member iterable of numbers, " \
+                                     "got {}".format(centeredAt)
+        centeredAt = np.asarray(centeredAt)
+
+        def nodeDistance(n):
+            nXYZ = np.asarray(n.content["p3d"].xyz)
+            return np.linalg.norm(nXYZ - centeredAt)
+
+        def nodeXYZ(n):
+            return np.asarray(n.content["p3d"].xyz)
+
+        allNodesExceptRoot = [x for x in self.get_tree().breadth_first_iterator_generator() if x.parent]
+
+        for node in allNodesExceptRoot:
+
+            nodeDist = nodeDistance(node)
+            parentDist = nodeDistance(node.parent)
+
+            # both points are within first shell
+            if nodeDist <= radiiSorted[0] and parentDist <= radiiSorted[0]:
+                lengths[0] += np.linalg.norm(nodeXYZ(node) - nodeXYZ(node.parent))
+
+            else:
+                if nodeDist < parentDist:
+                    nearerPoint = nodeXYZ(node)
+                    nearerDist = nodeDist
+                    fartherPoint = nodeXYZ(node.parent)
+                    fartherDist = parentDist
+                else:
+                    nearerPoint = nodeXYZ(node.parent)
+                    nearerDist = parentDist
+                    fartherPoint = nodeXYZ(node)
+                    fartherDist = nodeDist
+
+                radiiCrossedMask = np.logical_and(nearerDist < radiiSorted, radiiSorted <= fartherDist)
+                radiiCrossed = radiiSorted[radiiCrossedMask]
+
+                # line connecting the points are within one shell
+                if len(radiiCrossed) == 0:
+
+                    largestRLessNearerPoint = radiiSorted[radiiSorted <= nearerDist].max()
+                    intersects = getIntersectionXYZs(nearerPoint, fartherPoint, centeredAt, largestRLessNearerPoint)
+
+                    # line joining the points does not intersect any sphere
+                    if len(intersects) == 0:
+                        shellIndex = radii.index(largestRLessNearerPoint) + 1
+                        lengths[shellIndex] += np.linalg.norm(fartherPoint - nearerPoint)
+                    # line joining the points intersects a sphere are two distinct points
+                    elif len(intersects) == 2:
+                        intersects = np.array(intersects)
+                        innerShellIndex = radii.index(largestRLessNearerPoint)
+                        outerShellIndex = radii.index(largestRLessNearerPoint) + 1
+                        lengths[outerShellIndex] += np.linalg.norm(intersects[0] - nearerPoint)
+                        lengths[outerShellIndex] += np.linalg.norm(fartherPoint - intersects[1])
+                        lengths[innerShellIndex] += np.linalg.norm(intersects[1] - intersects[0])
+
+                    else:
+                        raise(ValueError("Impossible case! There has been a wrong assumption."))
+
+                # line connecting the points is contained in at least two shells
+                else:
+                    tempNearestPoint = nearerPoint
+                    for rad in radiiCrossed:
+                        shellIndex = radii.index(rad)
+                        intersects = getIntersectionXYZs(nearerPoint, fartherPoint, centeredAt, rad)
+                        assert len(intersects) == 1, "Impossible case! There has been a wrong assumption."
+                        intersect = np.array(intersects[0])
+                        lengths[shellIndex] += np.linalg.norm(intersect - tempNearestPoint)
+                        tempNearestPoint = intersect
+                    if shellIndex + 1 < len(radii):
+                        lengths[shellIndex + 1] += np.linalg.norm(fartherPoint - tempNearestPoint)
+
+        return lengths
+
+
+
+
+
 

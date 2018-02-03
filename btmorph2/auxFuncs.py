@@ -1,6 +1,7 @@
 import numpy as np
 from collections import Counter
 
+
 # **********************************************************************************************************************
 
 def readSWC_numpy(swcFile):
@@ -141,3 +142,54 @@ def transSWC_rotAboutPoint(fName, A, b, destFle, point):
 
     np.savetxt(destFle, data, header=headr, fmt=formatStr)
 #***********************************************************************************************************************
+
+
+def getIntersectionXYZs(p1, p2, centeredAt, radius):
+    """
+    Calculates and returns the points of intersection between the line joining the points p1 and p2
+    and the circle centered at centeredAt with radius radius. The points are ordered as they would be encountered when
+    moving from p1 to c2
+    :param p1: 3 member float iterable
+    :param p2: 3 member float iterable
+    :param centeredAt: 3 member float iterable
+    :param radius: float
+    :return: iterable of intersections, each interesection being a 3 member float iterable
+    """
+
+    # Solving |x + alpha *y| = radius where
+    # x is the vector p1 - centeredAt,
+    # y is the vector c2 - centeredAt,
+    # alpha is a float in [0, 1]
+
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    centeredAt = np.array(centeredAt)
+
+    x = p1 - centeredAt
+    y = p2 - centeredAt
+
+    modx = np.linalg.norm(x)
+
+    yMx = y - x
+    mod_yMx = np.linalg.norm(yMx)
+
+    xDotyMx = np.dot(x, yMx)
+
+    # the above problem reduces to solving A * alpha^2 + B * alpha + C = 0 where
+
+    A = mod_yMx ** 2
+    B = 2 * xDotyMx
+    C = modx ** 2 - radius ** 2
+
+    roots = np.roots([A, B, C])
+    roots = np.round(roots, 3)
+    if all(np.isreal(roots)):
+        roots = np.sort(roots)
+
+    intersections = [(x + alpha * (y - x)).tolist() for alpha in roots if np.isreal(alpha) and 1 >= alpha >= 0]
+
+    return intersections
+
+#***********************************************************************************************************************
+
+

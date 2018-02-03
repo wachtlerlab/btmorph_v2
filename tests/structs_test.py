@@ -492,3 +492,44 @@ def getGlobalScalarMeasures_NM_test():
    }
     assert all([np.allclose(tests_globalFeatures[x], expectedGlobalFeatures[x], atol=1e-3)
                 for x in expectedGlobalFeatures.keys()])
+
+
+def sholl_test():
+    """
+    Testing the getIntersectionsVsDistance function of Neuron Morphology
+    :return:
+    """
+
+    swcFile = "tests/sholl_test.swc"
+    nrn = NeuronMorphology(swcFile, correctIfSomaAbsent=True)
+    radii = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+    centeredAt = [0, 0, 0]
+    intersects = nrn.getIntersectionsVsDistance(radii=radii, centeredAt=centeredAt)
+
+    expectedIntersects = [1, 2, 2, 2, 2, 2, 4, 5, 4, 5, 3, 3]
+
+    assert np.allclose(intersects, expectedIntersects, atol=0)
+
+
+def lengthVsDistance_test():
+    """
+    Testing the getLengthVsDistance function of NeuronMorphology
+    :return:
+    """
+
+    swcFile = "tests/sholl_test.swc"
+    nrn = NeuronMorphology(swcFile, correctIfSomaAbsent=True)
+    radii = range(5, 65, 5)
+    centeredAt = [0, 0, 0]
+    lengths = nrn.getLengthVsDistance(radii=radii, centeredAt=centeredAt)
+    expectedLengths = [9.8110707864739055, 19.221601343666464, 14.6873629022557,
+                       10.487148622007609, 13.980256121069152, 10.840702012600886,
+                       25.026997102991103, 28.703342699720178, 36.90289680818843,
+                       25.45313963275283, 31.924143237189671, 16.429818895055199]
+
+    assert np.allclose(lengths, expectedLengths)
+
+
+
+# if __name__ == "__main__":
+#     lengthVsDistance_test()
