@@ -1348,6 +1348,10 @@ class NeuronMorphology(object):
                 nearerDist = nodeDist
                 nearerXYZ = nodeXYZ(node)
 
+            # Finding intersects with spheres can have slight error. To avoid inconsistencies, round distances
+            nearerDist = np.round(nearerDist, 3)
+            fartherDist = np.round(fartherDist, 3)
+
             if fartherDist > radiiSorted[0]:
                 radiiCrossedMask = np.logical_and(nearerDist < radiiSorted, radiiSorted <= fartherDist)
                 radiiCrossed = radiiSorted[radiiCrossedMask]
@@ -1424,7 +1428,11 @@ class NeuronMorphology(object):
                     fartherPoint = nodeXYZ(node)
                     fartherDist = nodeDist
 
-                radiiCrossedMask = np.logical_and(nearerDist < radiiSorted, radiiSorted <= fartherDist)
+                # # Finding intersects with spheres can have slight error. To avoid inconsistencies, round distances
+                # nearerDist = np.round(nearerDist, 3)
+                # fartherDist = np.round(fartherDist, 3)
+
+                radiiCrossedMask = np.logical_and(nearerDist <= radiiSorted, radiiSorted <= fartherDist)
                 radiiCrossed = radiiSorted[radiiCrossedMask]
 
                 # line connecting the points are within one shell
@@ -1434,7 +1442,8 @@ class NeuronMorphology(object):
                     intersects = getIntersectionXYZs(nearerPoint, fartherPoint, centeredAt, largestRLessNearerPoint)
 
                     # line joining the points does not intersect any sphere
-                    if len(intersects) == 0:
+                    # (len(intersects) == 1 can occur due to rounding error in finding intersects)
+                    if len(intersects) < 2:
                         shellIndex = radii.index(largestRLessNearerPoint) + 1
                         lengths[shellIndex] += np.linalg.norm(fartherPoint - nearerPoint)
                     # line joining the points intersects a sphere are two distinct points
@@ -1446,8 +1455,6 @@ class NeuronMorphology(object):
                         lengths[outerShellIndex] += np.linalg.norm(fartherPoint - intersects[1])
                         lengths[innerShellIndex] += np.linalg.norm(intersects[1] - intersects[0])
 
-                    else:
-                        raise(ValueError("Impossible case! There has been a wrong assumption."))
 
                 # line connecting the points is contained in at least two shells
                 else:
@@ -1455,8 +1462,18 @@ class NeuronMorphology(object):
                     for rad in radiiCrossed:
                         shellIndex = radii.index(rad)
                         intersects = getIntersectionXYZs(nearerPoint, fartherPoint, centeredAt, rad)
-                        assert len(intersects) == 1, "Impossible case! There has been a wrong assumption."
-                        intersect = np.array(intersects[0])
+                        if len(intersects) == 1:
+                            intersect = np.array(intersects[0])
+                        # len(intersects) == 2 can happen when the line joining the points crosses one sphere
+                        # two times and nearerPoint is on the sphere.
+                        elif len(intersects) == 2:
+                            intersect = np.array(intersects[1])
+                        else:
+                            # This case must theoretically not happen, but happens due to rounding errors
+                            pass
+                            # raise(ValueError("Impossible case! There has been a wrong assumption."))
+
+
                         lengths[shellIndex] += np.linalg.norm(intersect - tempNearestPoint)
                         tempNearestPoint = intersect
                     if shellIndex + 1 < len(radii):

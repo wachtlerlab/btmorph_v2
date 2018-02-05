@@ -58,4 +58,5 @@ def getPointAtDistance_test():
                                                                                 atol=1e-2)
 
 if __name__ == "__main__":
-    intersects = getIntersectionXYZs(p1=[20, 30, 0], p2=[30, 40, 0], radius=50, centeredAt=[0, 0, 0])
+    intersects = getIntersectionXYZs(p1=[ 100.455,  159.113,  155.615], p2=[ 100.288,  158.798,  155.015],
+                                     radius=160, centeredAt=[ 254.79213333,  119.54293333,  168.7052])
