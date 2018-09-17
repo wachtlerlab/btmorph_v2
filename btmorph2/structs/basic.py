@@ -514,7 +514,7 @@ class Tree(object):
     def depth_first_iterator_generator(self):
         """
         Generator function to produce an iterator that traverses depth first through nodes of the tree.
-        Ex. [x for x in tree.breadth_first_iterator_generator] produces a list of nodes in breadth-first
+        Ex. [x for x in tree.breadth_first_iterator_generator()] produces a list of nodes in breadth-first
         traversal order
         """
 
