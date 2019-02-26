@@ -1481,6 +1481,53 @@ class NeuronMorphology(object):
 
         return lengths
 
+    def get_terminal_proximities_all_nodes(self):
+        """
+        Calculates Terminal Proximity for all nodes.
+
+        Terminal Proximity = A / B, where
+        A =  path length to root from node
+        B = maximum of the path lengths to root from all terminals in the subtree downstream of the node.
+        :return: terminal_proximities, dict with node indexes as keys and the values of Terminal Proximities as values.
+        """
+
+        pathlength2root = {}
+        max_subtree_pathlength = {}
+        for node in self.tree.depth_first_iterator_generator():
+
+            parent = node.get_parent()
+            # if node is root
+            if parent is None:
+                pathlength2root[node.index] = 0
+            else:
+
+                # calculate the path length to root
+                if parent.index in pathlength2root:
+                    parentXYZ = parent.content['p3d'].xyz
+                    nodeXYZ = node.content["p3d"].xyz
+                    pathlength2root[node.index] = pathlength2root[parent.index] \
+                                                  + np.linalg.norm(nodeXYZ - parentXYZ)
+                else:
+                    pathlength2root[node.index] = self.get_pathlength_to_root(node)
+
+            # for terminals, set the maximum subtree path length for all nodes in the path to root
+            if len(node.get_children()) == 0:
+                path2Root = self.tree.path_to_root(node)
+                for intNode in path2Root:
+                    if intNode.index in max_subtree_pathlength:
+                        max_subtree_pathlength[intNode.index] = max(max_subtree_pathlength[intNode.index],
+                                                                           pathlength2root[node.index])
+                    else:
+                        max_subtree_pathlength[intNode.index] = pathlength2root[node.index]
+
+        terminal_proximities = {}
+        for node in self._all_nodes:
+
+            terminal_proximities[node.index] = pathlength2root[node.index] / max_subtree_pathlength[node.index]
+
+        return terminal_proximities
+
+
 
 
 

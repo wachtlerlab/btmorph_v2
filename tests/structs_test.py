@@ -145,8 +145,7 @@ def test_global_bifurcations():
 
 def test_global_terminals():
     """
-    Terminal point count
-    """
+    Terminal point count    """
     swc_neuron1 = NeuronMorphology('tests/v_e_moto1.CNG.swc')
     no_terminals = swc_neuron1.no_terminals()
     print(('no_terminals=%f' % no_terminals))
@@ -530,6 +529,22 @@ def lengthVsDistance_test():
     assert np.allclose(lengths, expectedLengths)
 
 
+def get_terminal_proximities_all_nodes_test():
+    """
+    Testing the function get_terminal_poximities_all_nodes of NeuronMorphology
+    """
+
+    swcFile = "tests/sholl_test.swc"
+    nrn = NeuronMorphology(swcFile, correctIfSomaAbsent=True)
+    terminal_proxs = nrn.get_terminal_proximities_all_nodes()
+    expected_terminal_proxs = {1: 0.0, 2: 0.15163773912949785, 3: 1.0, 4: 0.28836488397218757,
+                               5: 0.5933942940277251, 6: 0.7618158919797283, 7: 1.0, 8: 1.0,
+                               9: 0.8189477420821177, 10: 1.0, 11: 1.0, 12: 0.4250920288148773,
+                               13: 1.0, 14: 0.5618191736575671, 15: 0.7551805562386494, 16: 0.8919077010813391,
+                               17: 1.0, 18: 0.7832047168707557, 19: 1.0, 20: 1.0, 21: 1.0, 22: 1.0, 23: 1.0, 24: 1.0}
+    assert len(terminal_proxs) == len(expected_terminal_proxs) and \
+           all([np.allclose(terminal_proxs[x], expected_terminal_proxs[x]) for x in terminal_proxs.keys()])
+
 
 # if __name__ == "__main__":
-#     lengthVsDistance_test()
+#     get_terminal_proximities_all_nodes_test()
