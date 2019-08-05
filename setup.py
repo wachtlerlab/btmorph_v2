@@ -1,10 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="btmorph2",
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
-    packages=['btmorph2'],
+    packages=find_packages(exclude=["examples", "tests"]),
     install_requires=[
         "numpy>=1.11.2",
         "matplotlib>=1.5.3",
